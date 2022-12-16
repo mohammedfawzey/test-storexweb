@@ -69,10 +69,26 @@ export default {
     image: [],
     url: "https://test-api.storexweb.com/api/movies",
   }),
+  mounted() {
+    //TODO this.getAllCategories()
+  },
   methods: {
+    async getAllCategories() {
+const token = `Bearer ${localStorage.getItem("storexweb_token")}`;
+      const headers = {
+        authorization: token,
+      };
+      await axios.get("https://test-api.storexweb.com/api/category",{headers}).then((result)=>{
+        console.log("the categories",result.data.message)
+        this.categoryItems=result.data.message
+      }).catch(err=>{
+         if(err.response.status!=401)return;
+        localStorage.removeItem("storexweb_token")
+        this.$store.commit("M_setUserAuth",false)
+      })
+    },
     async createNewMovie() {
       const token = `Bearer ${localStorage.getItem("storexweb_token")}`;
-      console.log("token", token);
       const headers = {
         authorization: token,
       };
@@ -83,9 +99,13 @@ export default {
       formData.append("description", this.description);
       formData.append("category_id", this.category);
       formData.append("id", this.id);
-      console.log("formData", formData);
-      const result = await axios.post(this.url, formData, { headers });
-      console.log("result", result);
+      await axios.post(this.url, formData, { headers }).then((result)=>{
+        console.log("result", result);
+      }).catch(err=>{
+          if(err.response.status!=401)return;
+        localStorage.removeItem("storexweb_token")
+        this.$store.commit("M_setUserAuth",false)
+      })
     },
   },
 };

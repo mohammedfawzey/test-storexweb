@@ -55,7 +55,10 @@ export default {
     url: "https://test-api.storexweb.com/api/movies",
   }),
   mounted() {
+    //   if(this.$store.state.S_userLoggedIn)return;
+    // this.$router.push({path:'/login'})
     this.getTheMovie();
+
   },
   methods: {
     async getTheMovie() {
@@ -64,12 +67,13 @@ export default {
       const headers = {
         authorization: token,
       };
-      const result = await axios.get(
+       await axios.get(
         `https://test-api.storexweb.com/api/movies/${this.$route.params.id}`,
         { headers }
-      );
-      this.theMovie = result.data.message;
-      console.log("the-movei", this.theMovie);
+      ).then((result)=>{
+
+        this.theMovie = result.data.message;
+      })
     },
     async deleteTheMovie() {
       const token = `Bearer ${localStorage.getItem("storexweb_token")}`;
@@ -77,10 +81,14 @@ export default {
       const headers = {
         authorization: token,
       };
-      const result = await axios.delete(
+       await axios.delete(
         `https://test-api.storexweb.com/api/movies/${this.$route.params.id}`,
         { headers }
-      );
+      ).catch(err=>{
+         if(err.response.status!=401)return;
+        localStorage.removeItem("storexweb_token")
+        this.$store.commit("M_setUserAuth",false)
+      })
       this.$router.push({ path: "/" });
     },
     async editTheMovie() {
@@ -89,7 +97,6 @@ export default {
       const headers = {
         authorization: token,
       };
-      //   this.$axios.post(url, { headers });
       const formData = new FormData();
       formData.append("image", this.image);
       formData.append("name", this.name);
@@ -97,16 +104,20 @@ export default {
       formData.append("category_id", this.category);
       formData.append("_method", "put");
       //   formData.append("id", this.id);
-      const result = await axios.post(
+       await axios.post(
         `${this.url}/${this.$route.params.id}`,
         formData,
         { headers }
-      );
-      //   console.log("result", result);
+      ).then((result)=>{
       if (result.data.status == 200) {
         this.getTheMovie();
         this.editDialog = false
       }
+        }).catch(err=>{
+           if(err.response.status!=401)return;
+        localStorage.removeItem("storexweb_token")
+        this.$store.commit("M_setUserAuth",false)
+        })
     },
   },
   components: {

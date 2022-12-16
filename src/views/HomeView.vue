@@ -88,14 +88,22 @@ export default {
     category: "",
   }),
   mounted() {
+    // if(this.$store.state.S_userLoggedIn)return;
+    // this.$router.push({path:'/login'})
+    // TODO this.getAllCategories()
     this.getAllMovies();
-    if (this.$store.state.S_userLoggedIn) {
-      console.log("user logged in");
-    } else {
-      console.log("not loggedin");
-    }
   },
   methods: {
+        async getAllCategories() {
+const token = `Bearer ${localStorage.getItem("storexweb_token")}`;
+      const headers = {
+        authorization: token,
+      };
+      await axios.get("https://test-api.storexweb.com/api/category",{headers}).then((result)=>{
+        console.log("the categories",result.data.message)
+        this.categoryItems=result.data.message
+      })
+    },
     async getAllMovies() {
       // get the token
       const token = `Bearer ${localStorage.getItem("storexweb_token")}`;
@@ -109,6 +117,8 @@ export default {
       ).then((result)=>{
         this.movies = result.data.message;
       }).catch((err)=>{
+        if(err.response.status!=401)return;
+        localStorage.removeItem("storexweb_token")
         this.$store.commit("M_setUserAuth",false)
       })
     },
@@ -125,11 +135,17 @@ export default {
       const headers = {
         authorization: token,
       };
-      const result = await axios.get(
+       await axios.get(
         `https://test-api.storexweb.com/api/moviesByCategory/${this.category}`,
         { headers }
-      );
-      this.movies = result.data.message;
+      ).then((result)=>{
+
+        this.movies = result.data.message;
+      }).catch(err=>{
+          if(err.response.status!=401)return;
+        localStorage.removeItem("storexweb_token")
+        this.$store.commit("M_setUserAuth",false)
+      })
     }
         }
   },
